@@ -1,0 +1,66 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage[hidelinks]{hyperref}
+
+\title{System UI Report}
+\author{Project Submission}
+\date{\today}
+
+\newcommand{\screenshotfigure}[3]{%
+\begin{figure}[H]
+    \centering
+    \fbox{%
+    \begin{minipage}[c][0.65\textheight][c]{0.92\textwidth}
+        \centering
+        \vspace{0.35cm}
+        \IfFileExists{#2}{%
+            \includegraphics[width=0.9\textwidth,height=0.58\textheight,keepaspectratio]{#2}
+        }{%
+            \begin{minipage}[c][0.58\textheight][c]{0.9\textwidth}
+                \centering
+                \Large Screenshot placeholder
+
+                \vspace{0.35cm}
+                \small Place the image at \texttt{#2}
+            \end{minipage}
+        }
+        \vspace{0.35cm}
+    \end{minipage}}
+    \caption{#3}
+\end{figure}%
+}
+
+\begin{document}
+
+\maketitle
+
+\section*{Overview}
+This report presents screenshots of the system UI for the main administrative views.
+Replace the image file names below with the actual screenshots exported from the application.
+
+\section{Dashboard (Admin Analytics Overview)}
+This screenshot should show the main admin dashboard with summary metrics, cards, and the overall analytics overview.
+
+\screenshotfigure{Dashboard screenshot}{screenshots/dashboard.png}{Admin dashboard analytics overview}
+
+\section{Leads Management Page}
+This screenshot should show the leads list, search/filter controls, assignment actions, and lead status information.
+
+\screenshotfigure{Leads management screenshot}{screenshots/leads-management.png}{Leads management page}
+
+\section{Analytics Section (Charts and Insights)}
+This screenshot should show analytics charts, trends, and key insights used for reporting and decision-making.
+
+\screenshotfigure{Analytics screenshot}{screenshots/analytics.png}{Analytics section with charts and insights}
+
+\section*{Notes}
+\begin{itemize}
+    \item Use clear screenshots with full UI visibility.
+    \item Keep the images in a \texttt{screenshots/} folder next to this file.
+    \item Compile with \texttt{pdflatex report.tex} or any LaTeX editor.
+\end{itemize}
+
+\end{document}
