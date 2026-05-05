@@ -14,6 +14,8 @@ type Lead = {
   budget: number;
   status: string;
   score: string;
+  followUpDate?: string;
+  lastActivityAt?: string;
   assignedTo?: { _id: string; name: string };
   overdue?: boolean;
   inactive?: boolean;
@@ -33,7 +35,7 @@ export function DashboardView({ role }: { role: Role }) {
   const fetchLeads = useCallback(async () => {
     const res = await fetch("/api/leads");
     const data = await res.json();
-    setLeads((data.data ?? []).slice(0, 5));
+    setLeads(data.data ?? []);
   }, []);
 
   const fetchAnalytics = useCallback(async () => {
@@ -67,8 +69,29 @@ export function DashboardView({ role }: { role: Role }) {
     lost: "bg-slate-100 text-slate-700"
   };
 
+  const recentLeads = leads.slice(0, 5);
+  const overdueLeads = leads.filter((lead) => lead.overdue).length;
+  const staleLeads = leads.filter((lead) => lead.inactive).length;
+
   return (
     <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="rounded-lg bg-white p-6 shadow-sm border-l-4 border-slate-900">
+          <p className="text-sm text-slate-600">Active Leads</p>
+          <p className="mt-2 text-3xl font-bold text-slate-900">{leads.length}</p>
+        </div>
+
+        <div className="rounded-lg bg-white p-6 shadow-sm border-l-4 border-amber-500">
+          <p className="text-sm text-slate-600">Pending Follow-ups</p>
+          <p className="mt-2 text-3xl font-bold text-slate-900">{overdueLeads}</p>
+        </div>
+
+        <div className="rounded-lg bg-white p-6 shadow-sm border-l-4 border-rose-500">
+          <p className="text-sm text-slate-600">Stale Leads</p>
+          <p className="mt-2 text-3xl font-bold text-slate-900">{staleLeads}</p>
+        </div>
+      </div>
+
       {role === "admin" && (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
           <div className="rounded-lg bg-white p-6 shadow-sm border-l-4 border-blue-500">
@@ -120,13 +143,16 @@ export function DashboardView({ role }: { role: Role }) {
               </tr>
             </thead>
             <tbody>
-              {leads.map((lead) => {
+              {recentLeads.map((lead) => {
                 const statusColor = statusColorMap[lead.status] || "bg-slate-100 text-slate-700";
                 return (
                   <tr key={lead._id} className="border-b border-slate-100 hover:bg-slate-50">
                     <td className="px-6 py-3">
                       <div className="font-medium text-slate-900">{lead.name}</div>
                       <div className="text-xs text-slate-500">{lead.propertyInterest}</div>
+                      {lead.followUpDate ? (
+                        <div className="mt-1 text-xs text-amber-700">Follow-up: {new Date(lead.followUpDate).toLocaleDateString()}</div>
+                      ) : null}
                     </td>
                     <td className="px-6 py-3">
                       <span className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${statusColor}`}>

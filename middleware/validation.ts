@@ -15,7 +15,10 @@ export const leadSchema = z.object({
   status: z.enum(["new", "contacted", "qualified", "closed", "lost"]).optional(),
   notes: z.string().optional(),
   assignedTo: z.string().optional(),
-  followUpDate: z.string().datetime().optional()
+  followUpDate: z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z.string().datetime().optional()
+  )
 });
 
 export const leadUpdateSchema = leadSchema.partial();

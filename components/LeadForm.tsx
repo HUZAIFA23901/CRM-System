@@ -28,10 +28,16 @@ export function LeadForm({ onCreated }: { onCreated: () => void }) {
     }
 
     try {
+      const payload = {
+        ...form,
+        budget: Number(form.budget),
+        ...(form.followUpDate ? { followUpDate: form.followUpDate } : {})
+      };
+
       const res = await fetch("/api/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, budget: Number(form.budget) })
+        body: JSON.stringify(payload)
       });
 
       if (!res.ok) {

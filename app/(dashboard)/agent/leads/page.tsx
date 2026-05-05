@@ -20,7 +20,7 @@ type Lead = {
 
 export default function AgentLeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [filters, setFilters] = useState({ status: "", priority: "" });
+  const [filters, setFilters] = useState({ status: "", priority: "", dateFrom: "", dateTo: "" });
   const [loading, setLoading] = useState(true);
 
   const fetchLeads = useCallback(async () => {
@@ -53,7 +53,7 @@ export default function AgentLeadsPage() {
 
       <div className="rounded-lg bg-white p-4 shadow-sm">
         <h2 className="mb-4 text-lg font-semibold text-slate-900">Filters</h2>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
           <select
             className="rounded-lg border border-slate-200 p-2 text-sm"
             value={filters.status}
@@ -76,6 +76,18 @@ export default function AgentLeadsPage() {
             <option value="Medium">Medium</option>
             <option value="Low">Low</option>
           </select>
+          <input
+            className="rounded-lg border border-slate-200 p-2 text-sm"
+            type="date"
+            value={filters.dateFrom}
+            onChange={(e) => setFilters((p) => ({ ...p, dateFrom: e.target.value }))}
+          />
+          <input
+            className="rounded-lg border border-slate-200 p-2 text-sm"
+            type="date"
+            value={filters.dateTo}
+            onChange={(e) => setFilters((p) => ({ ...p, dateTo: e.target.value }))}
+          />
         </div>
       </div>
 
@@ -111,6 +123,7 @@ export default function AgentLeadsPage() {
                     </span>
                     {isHighPriority && <span className="inline-block rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-700">🔴 High Priority</span>}
                     {lead.overdue && <span className="inline-block rounded-full bg-red-100 px-3 py-1 text-xs text-red-700">⏰ Overdue</span>}
+                    {lead.inactive && <span className="inline-block rounded-full bg-amber-100 px-3 py-1 text-xs text-amber-700">Stale activity</span>}
                   </div>
 
                   <div className="mt-3 grid grid-cols-3 gap-4 text-sm">

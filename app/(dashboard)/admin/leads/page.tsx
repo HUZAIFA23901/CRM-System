@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { ActivityTimeline } from "@/components/ActivityTimeline";
 import { LeadForm } from "@/components/LeadForm";
 import { whatsappLink } from "@/utils/whatsapp";
 
@@ -128,59 +129,68 @@ export default function AdminLeadsPage() {
                 const statusColor = statusColorMap[lead.status] || "bg-slate-100 text-slate-700";
 
                 return (
-                  <tr key={lead._id} className={`border-b border-slate-100 ${isHighPriority ? "bg-red-50" : ""}`}>
-                    <td className="px-6 py-3">
-                      <div className="font-medium text-slate-900">{lead.name}</div>
-                      <div className="text-xs text-slate-500">{lead.propertyInterest}</div>
-                    </td>
-                    <td className="px-6 py-3">
-                      <div className="text-sm text-slate-900">{lead.email}</div>
-                      <div className="text-xs text-slate-500">{lead.phone}</div>
-                    </td>
-                    <td className="px-6 py-3">
-                      <span className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${statusColor}`}>
-                        {lead.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-3">
-                      <span
-                        className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${
-                          lead.score === "High"
-                            ? "bg-red-100 text-red-700"
-                            : lead.score === "Medium"
-                              ? "bg-yellow-100 text-yellow-700"
-                              : "bg-slate-100 text-slate-700"
-                        }`}
-                      >
-                        {lead.score}
-                      </span>
-                    </td>
-                    <td className="px-6 py-3 text-slate-900 font-medium">₹{(lead.budget / 1000000).toFixed(1)}M</td>
-                    <td className="px-6 py-3">
-                      <select
-                        className="rounded-lg border border-slate-200 p-1 text-sm"
-                        value={lead.assignedTo?._id ?? ""}
-                        onChange={(e) => assignLead(lead._id, e.target.value)}
-                      >
-                        <option value="">Unassigned</option>
-                        {agents.map((agent) => (
-                          <option key={agent._id} value={agent._id}>
-                            {agent.name}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="px-6 py-3">
-                      <a
-                        href={whatsappLink(lead.phone)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-block rounded-lg bg-green-600 px-3 py-1 text-xs font-medium text-white transition hover:bg-green-700"
-                      >
-                        💬 WhatsApp
-                      </a>
-                    </td>
-                  </tr>
+                  <>
+                    <tr key={lead._id} className={`border-b border-slate-100 ${isHighPriority ? "bg-red-50" : ""}`}>
+                      <td className="px-6 py-3">
+                        <div className="font-medium text-slate-900">{lead.name}</div>
+                        <div className="text-xs text-slate-500">{lead.propertyInterest}</div>
+                        {lead.overdue ? <div className="mt-1 text-xs font-medium text-rose-600">⏰ Overdue follow-up</div> : null}
+                        {lead.inactive ? <div className="mt-1 text-xs font-medium text-amber-600">Stale activity</div> : null}
+                      </td>
+                      <td className="px-6 py-3">
+                        <div className="text-sm text-slate-900">{lead.email}</div>
+                        <div className="text-xs text-slate-500">{lead.phone}</div>
+                      </td>
+                      <td className="px-6 py-3">
+                        <span className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${statusColor}`}>
+                          {lead.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-3">
+                        <span
+                          className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${
+                            lead.score === "High"
+                              ? "bg-red-100 text-red-700"
+                              : lead.score === "Medium"
+                                ? "bg-yellow-100 text-yellow-700"
+                                : "bg-slate-100 text-slate-700"
+                          }`}
+                        >
+                          {lead.score}
+                        </span>
+                      </td>
+                      <td className="px-6 py-3 text-slate-900 font-medium">₹{(lead.budget / 1000000).toFixed(1)}M</td>
+                      <td className="px-6 py-3">
+                        <select
+                          className="rounded-lg border border-slate-200 p-1 text-sm"
+                          value={lead.assignedTo?._id ?? ""}
+                          onChange={(e) => assignLead(lead._id, e.target.value)}
+                        >
+                          <option value="">Unassigned</option>
+                          {agents.map((agent) => (
+                            <option key={agent._id} value={agent._id}>
+                              {agent.name}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                      <td className="px-6 py-3">
+                        <a
+                          href={whatsappLink(lead.phone)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-block rounded-lg bg-green-600 px-3 py-1 text-xs font-medium text-white transition hover:bg-green-700"
+                        >
+                          💬 WhatsApp
+                        </a>
+                      </td>
+                    </tr>
+                    <tr className="border-b border-slate-100 bg-slate-50/50">
+                      <td className="px-6 py-4" colSpan={7}>
+                        <ActivityTimeline leadId={lead._id} />
+                      </td>
+                    </tr>
+                  </>
                 );
               })}
             </tbody>
