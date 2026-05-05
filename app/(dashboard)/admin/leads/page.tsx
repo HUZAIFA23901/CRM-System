@@ -72,6 +72,7 @@ export default function AdminLeadsPage() {
     qualified: "bg-green-100 text-green-700",
     closed: "bg-emerald-100 text-emerald-700",
     lost: "bg-slate-100 text-slate-700",
+    done: "bg-slate-100 text-slate-700",
     client_interested: "bg-emerald-100 text-emerald-700",
     not_interested: "bg-rose-100 text-rose-700",
     pending: "bg-amber-100 text-amber-700",
