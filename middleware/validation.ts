@@ -12,13 +12,23 @@ export const leadSchema = z.object({
   phone: z.string().min(6),
   propertyInterest: z.string().min(2),
   budget: z.number().positive(),
-  status: z.enum(["new", "contacted", "qualified", "closed", "lost"]).optional(),
+  status: z
+    .enum([
+      "new",
+      "contacted",
+      "qualified",
+      "closed",
+      "lost",
+      "done",
+      "client_interested",
+      "not_interested",
+      "pending",
+      "did_not_contact"
+    ])
+    .optional(),
   notes: z.string().optional(),
   assignedTo: z.string().optional(),
-  followUpDate: z.preprocess(
-    (value) => (value === "" ? undefined : value),
-    z.string().datetime().optional()
-  )
+  followUpDate: z.union([z.string().datetime(), z.literal(""), z.null()]).optional()
 });
 
 export const leadUpdateSchema = leadSchema.partial();

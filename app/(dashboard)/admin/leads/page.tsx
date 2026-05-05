@@ -14,9 +14,23 @@ type Lead = {
   budget: number;
   status: string;
   score: string;
+  followUpDate?: string;
   assignedTo?: { _id: string; name: string };
   overdue?: boolean;
   inactive?: boolean;
+};
+
+const statusLabelMap: Record<string, string> = {
+  new: "New",
+  contacted: "Contacted",
+  qualified: "Qualified",
+  closed: "Closed",
+  lost: "Lost",
+  done: "Done",
+  client_interested: "Client Interested",
+  not_interested: "Not Interested",
+  pending: "Pending",
+  did_not_contact: "Did Not Contact"
 };
 
 export default function AdminLeadsPage() {
@@ -57,7 +71,11 @@ export default function AdminLeadsPage() {
     contacted: "bg-purple-100 text-purple-700",
     qualified: "bg-green-100 text-green-700",
     closed: "bg-emerald-100 text-emerald-700",
-    lost: "bg-slate-100 text-slate-700"
+    lost: "bg-slate-100 text-slate-700",
+    client_interested: "bg-emerald-100 text-emerald-700",
+    not_interested: "bg-rose-100 text-rose-700",
+    pending: "bg-amber-100 text-amber-700",
+    did_not_contact: "bg-slate-100 text-slate-700"
   };
 
   return (
@@ -83,6 +101,11 @@ export default function AdminLeadsPage() {
             <option value="qualified">Qualified</option>
             <option value="closed">Closed</option>
             <option value="lost">Lost</option>
+            <option value="done">Done</option>
+            <option value="client_interested">Client Interested</option>
+            <option value="not_interested">Not Interested</option>
+            <option value="pending">Pending</option>
+            <option value="did_not_contact">Did Not Contact</option>
           </select>
           <select
             className="rounded-lg border border-slate-200 p-2 text-sm"
@@ -143,7 +166,7 @@ export default function AdminLeadsPage() {
                       </td>
                       <td className="px-6 py-3">
                         <span className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${statusColor}`}>
-                          {lead.status}
+                          {statusLabelMap[lead.status] ?? lead.status}
                         </span>
                       </td>
                       <td className="px-6 py-3">

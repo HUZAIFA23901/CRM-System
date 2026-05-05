@@ -24,7 +24,7 @@ export function buildLeadPayload(input: {
   status?: string;
   notes?: string;
   assignedTo?: string;
-  followUpDate?: string;
+  followUpDate?: string | null;
 }) {
   return {
     ...input,

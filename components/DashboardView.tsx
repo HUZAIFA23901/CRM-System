@@ -66,7 +66,25 @@ export function DashboardView({ role }: { role: Role }) {
     contacted: "bg-purple-100 text-purple-700",
     qualified: "bg-green-100 text-green-700",
     closed: "bg-emerald-100 text-emerald-700",
-    lost: "bg-slate-100 text-slate-700"
+    lost: "bg-slate-100 text-slate-700",
+    done: "bg-slate-100 text-slate-700",
+    client_interested: "bg-emerald-100 text-emerald-700",
+    not_interested: "bg-rose-100 text-rose-700",
+    pending: "bg-amber-100 text-amber-700",
+    did_not_contact: "bg-slate-100 text-slate-700"
+  };
+
+  const statusLabelMap: Record<string, string> = {
+    new: "New",
+    contacted: "Contacted",
+    qualified: "Qualified",
+    closed: "Closed",
+    lost: "Lost",
+    done: "Done",
+    client_interested: "Client Interested",
+    not_interested: "Not Interested",
+    pending: "Pending",
+    did_not_contact: "Did Not Contact"
   };
 
   const recentLeads = leads.slice(0, 5);
@@ -156,7 +174,7 @@ export function DashboardView({ role }: { role: Role }) {
                     </td>
                     <td className="px-6 py-3">
                       <span className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${statusColor}`}>
-                        {lead.status}
+                        {statusLabelMap[lead.status] ?? lead.status}
                       </span>
                     </td>
                     <td className="px-6 py-3">

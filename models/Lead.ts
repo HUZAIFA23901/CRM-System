@@ -9,7 +9,18 @@ const leadSchema = new Schema(
     budget: { type: Number, required: true, min: 0, index: true },
     status: {
       type: String,
-      enum: ["new", "contacted", "qualified", "closed", "lost"],
+      enum: [
+        "new",
+        "contacted",
+        "qualified",
+        "closed",
+        "lost",
+        "done",
+        "client_interested",
+        "not_interested",
+        "pending",
+        "did_not_contact"
+      ],
       default: "new",
       index: true
     },

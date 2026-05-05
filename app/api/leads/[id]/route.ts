@@ -50,11 +50,18 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   lead.lastActivityAt = new Date();
   await lead.save();
 
+  const changedFields = [
+    parsed.data.status ? `status set to ${parsed.data.status}` : null,
+    parsed.data.followUpDate ? `follow-up scheduled for ${new Date(parsed.data.followUpDate).toLocaleString()}` : null,
+    parsed.data.notes ? "notes updated" : null,
+    parsed.data.budget ? `budget updated to ${parsed.data.budget}` : null
+  ].filter(Boolean);
+
   await createActivityLog({
     leadId: id,
-    action: "lead_updated",
+    action: parsed.data.status ? "lead_status_updated" : parsed.data.followUpDate ? "lead_followup_updated" : "lead_updated",
     performedBy: token.sub,
-    details: "Lead details updated"
+    details: changedFields.length ? changedFields.join(", ") : "Lead details updated"
   });
   emitLeadEvent("lead_updated", { leadId: id });
   return ok(lead);
