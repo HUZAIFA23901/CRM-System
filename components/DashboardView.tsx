@@ -1,11 +1,8 @@
 "use client";
 
-import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
-import { signOut } from "next-auth/react";
-import { io, Socket } from "socket.io-client";
-import { LeadForm } from "@/components/LeadForm";
-import { ActivityTimeline } from "@/components/ActivityTimeline";
-import { whatsappLink } from "@/utils/whatsapp";
+import { useCallback, useEffect, useState } from "react";
+import { io } from "socket.io-client";
+import Link from "next/link";
 
 type Role = "admin" | "agent";
 type Lead = {
@@ -17,33 +14,27 @@ type Lead = {
   budget: number;
   status: string;
   score: string;
-  notes?: string;
+  assignedTo?: { _id: string; name: string };
   overdue?: boolean;
   inactive?: boolean;
-  assignedTo?: { _id: string; name: string };
+};
+
+type AnalyticsData = {
+  totalLeads: number;
+  byStatus: Array<{ _id: string; count: number }>;
+  byPriority: Array<{ _id: string; count: number }>;
+  perAgent: Array<{ agentName: string; count: number }>;
 };
 
 export function DashboardView({ role }: { role: Role }) {
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [agents, setAgents] = useState<{ _id: string; name: string }[]>([]);
-  const [analytics, setAnalytics] = useState<Record<string, unknown> | null>(null);
-  const [filters, setFilters] = useState({ status: "", priority: "", dateFrom: "", dateTo: "" });
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
 
   const fetchLeads = useCallback(async () => {
-    const qs = new URLSearchParams(
-      Object.entries(filters).filter(([, value]) => value !== "")
-    ).toString();
-    const res = await fetch(`/api/leads${qs ? `?${qs}` : ""}`);
+    const res = await fetch("/api/leads");
     const data = await res.json();
-    setLeads(data.data ?? []);
-  }, [filters]);
-
-  const fetchAgents = useCallback(async () => {
-    if (role !== "admin") return;
-    const res = await fetch("/api/users/agents");
-    const data = await res.json();
-    setAgents(data.data ?? []);
-  }, [role]);
+    setLeads((data.data ?? []).slice(0, 5));
+  }, []);
 
   const fetchAnalytics = useCallback(async () => {
     if (role !== "admin") return;
@@ -55,150 +46,124 @@ export function DashboardView({ role }: { role: Role }) {
   useEffect(() => {
     fetch("/api/socket");
     fetchLeads();
-    fetchAgents();
     fetchAnalytics();
-  }, [fetchAgents, fetchAnalytics, fetchLeads]);
+  }, [fetchLeads, fetchAnalytics]);
 
   useEffect(() => {
-    fetchLeads();
-  }, [fetchLeads, filters.status, filters.priority, filters.dateFrom, filters.dateTo]);
-
-  useEffect(() => {
-    const socket: Socket = io({ path: "/api/socket" });
-    const refresh = () => {
-      fetchLeads();
-      fetchAnalytics();
-    };
-    socket.on("lead_created", refresh);
-    socket.on("lead_assigned", refresh);
-    socket.on("lead_updated", refresh);
+    const socket = io({ path: "/api/socket" });
+    socket.on("lead_created", () => fetchLeads());
+    socket.on("lead_assigned", () => fetchLeads());
+    socket.on("lead_updated", () => fetchLeads());
     return () => {
       socket.disconnect();
     };
-  }, [fetchAnalytics, fetchLeads]);
+  }, [fetchLeads]);
 
-  const analyticsBlocks = useMemo(() => {
-    if (!analytics) return null;
-    return (
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
-        <Card title="Total Leads" value={String(analytics.totalLeads ?? 0)} />
-        <Card title="By Status" value={JSON.stringify(analytics.byStatus ?? [])} />
-        <Card title="By Priority" value={JSON.stringify(analytics.byPriority ?? [])} />
-        <Card title="Leads Per Agent" value={JSON.stringify(analytics.perAgent ?? [])} />
+  const statusColorMap: Record<string, string> = {
+    new: "bg-blue-100 text-blue-700",
+    contacted: "bg-purple-100 text-purple-700",
+    qualified: "bg-green-100 text-green-700",
+    closed: "bg-emerald-100 text-emerald-700",
+    lost: "bg-slate-100 text-slate-700"
+  };
+
+  return (
+    <div className="space-y-6">
+      {role === "admin" && (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+          <div className="rounded-lg bg-white p-6 shadow-sm border-l-4 border-blue-500">
+            <p className="text-sm text-slate-600">Total Leads</p>
+            <p className="mt-2 text-3xl font-bold text-slate-900">{analytics?.totalLeads ?? 0}</p>
+          </div>
+
+          <div className="rounded-lg bg-white p-6 shadow-sm border-l-4 border-green-500">
+            <p className="text-sm text-slate-600">High Priority</p>
+            <p className="mt-2 text-3xl font-bold text-slate-900">
+              {analytics?.byPriority
+                ? analytics.byPriority.find((p) => p._id === "High")?.count ?? 0
+                : 0}
+            </p>
+          </div>
+
+          <div className="rounded-lg bg-white p-6 shadow-sm border-l-4 border-purple-500">
+            <p className="text-sm text-slate-600">New Leads</p>
+            <p className="mt-2 text-3xl font-bold text-slate-900">
+              {analytics?.byStatus ? analytics.byStatus.find((s) => s._id === "new")?.count ?? 0 : 0}
+            </p>
+          </div>
+
+          <div className="rounded-lg bg-white p-6 shadow-sm border-l-4 border-emerald-500">
+            <p className="text-sm text-slate-600">Closed Deals</p>
+            <p className="mt-2 text-3xl font-bold text-slate-900">
+              {analytics?.byStatus ? analytics.byStatus.find((s) => s._id === "closed")?.count ?? 0 : 0}
+            </p>
+          </div>
+        </div>
+      )}
+
+      <div className="rounded-lg bg-white shadow-sm">
+        <div className="border-b border-slate-200 px-6 py-4">
+          <h2 className="text-lg font-semibold text-slate-900">
+            {role === "admin" ? "Recent Leads" : "Recent Assigned Leads"}
+          </h2>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-200 bg-slate-50">
+                <th className="px-6 py-3 text-left font-semibold text-slate-700">Lead Name</th>
+                <th className="px-6 py-3 text-left font-semibold text-slate-700">Status</th>
+                <th className="px-6 py-3 text-left font-semibold text-slate-700">Priority</th>
+                <th className="px-6 py-3 text-left font-semibold text-slate-700">Budget</th>
+                <th className="px-6 py-3 text-left font-semibold text-slate-700">Assigned To</th>
+              </tr>
+            </thead>
+            <tbody>
+              {leads.map((lead) => {
+                const statusColor = statusColorMap[lead.status] || "bg-slate-100 text-slate-700";
+                return (
+                  <tr key={lead._id} className="border-b border-slate-100 hover:bg-slate-50">
+                    <td className="px-6 py-3">
+                      <div className="font-medium text-slate-900">{lead.name}</div>
+                      <div className="text-xs text-slate-500">{lead.propertyInterest}</div>
+                    </td>
+                    <td className="px-6 py-3">
+                      <span className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${statusColor}`}>
+                        {lead.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-3">
+                      <span
+                        className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${
+                          lead.score === "High"
+                            ? "bg-red-100 text-red-700"
+                            : lead.score === "Medium"
+                              ? "bg-yellow-100 text-yellow-700"
+                              : "bg-slate-100 text-slate-700"
+                        }`}
+                      >
+                        {lead.score}
+                      </span>
+                    </td>
+                    <td className="px-6 py-3 font-medium text-slate-900">₹{(lead.budget / 1000000).toFixed(1)}M</td>
+                    <td className="px-6 py-3 text-slate-600">{lead.assignedTo?.name ?? "Unassigned"}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="border-t border-slate-200 px-6 py-3 text-right">
+          <Link
+            href={role === "admin" ? "/admin/leads" : "/agent/leads"}
+            className="text-sm font-medium text-blue-600 hover:text-blue-700"
+          >
+            View All Leads →
+          </Link>
+        </div>
       </div>
-    );
-  }, [analytics]);
-
-  async function assignLead(leadId: string, agentId: string) {
-    await fetch(`/api/leads/${leadId}/assign`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ assignedTo: agentId })
-    });
-    fetchLeads();
-  }
-
-  return (
-    <main className="mx-auto max-w-7xl p-4">
-      <header className="mb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">{role === "admin" ? "Admin Dashboard" : "Agent Dashboard"}</h1>
-        <button className="rounded bg-slate-900 px-3 py-2 text-white" onClick={() => signOut({ callbackUrl: "/login" })}>
-          Logout
-        </button>
-      </header>
-
-      {role === "admin" ? (
-        <section className="mb-4">
-          <LeadForm onCreated={fetchLeads} />
-        </section>
-      ) : null}
-
-      {role === "admin" ? <section className="mb-4">{analyticsBlocks}</section> : null}
-
-      <section className="mb-4 grid grid-cols-1 gap-2 rounded border bg-white p-3 md:grid-cols-4">
-        <select className="rounded border p-2" value={filters.status} onChange={(e) => setFilters((p) => ({ ...p, status: e.target.value }))}>
-          <option value="">All Status</option>
-          <option value="new">New</option>
-          <option value="contacted">Contacted</option>
-          <option value="qualified">Qualified</option>
-          <option value="closed">Closed</option>
-          <option value="lost">Lost</option>
-        </select>
-        <select className="rounded border p-2" value={filters.priority} onChange={(e) => setFilters((p) => ({ ...p, priority: e.target.value }))}>
-          <option value="">All Priority</option>
-          <option value="High">High</option>
-          <option value="Medium">Medium</option>
-          <option value="Low">Low</option>
-        </select>
-        <input className="rounded border p-2" type="date" value={filters.dateFrom} onChange={(e) => setFilters((p) => ({ ...p, dateFrom: e.target.value }))} />
-        <input className="rounded border p-2" type="date" value={filters.dateTo} onChange={(e) => setFilters((p) => ({ ...p, dateTo: e.target.value }))} />
-      </section>
-
-      <section className="overflow-x-auto rounded border bg-white">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-slate-100">
-            <tr>
-              <th className="p-2">Lead</th>
-              <th className="p-2">Status</th>
-              <th className="p-2">Priority</th>
-              <th className="p-2">Assigned</th>
-              <th className="p-2">Flags</th>
-              <th className="p-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {leads.map((lead) => (
-              <Fragment key={lead._id}>
-                <tr className="border-t">
-                  <td className="p-2">
-                    <div className="font-medium">{lead.name}</div>
-                    <div className="text-xs text-slate-500">{lead.propertyInterest}</div>
-                  </td>
-                  <td className="p-2">{lead.status}</td>
-                  <td className="p-2">{lead.score}</td>
-                  <td className="p-2">
-                    {role === "admin" ? (
-                      <select className="rounded border p-1" onChange={(e) => assignLead(lead._id, e.target.value)} value={lead.assignedTo?._id ?? ""}>
-                        <option value="">Unassigned</option>
-                        {agents.map((agent) => (
-                          <option key={agent._id} value={agent._id}>
-                            {agent.name}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      lead.assignedTo?.name ?? "-"
-                    )}
-                  </td>
-                  <td className="p-2">
-                    {lead.overdue ? <span className="mr-1 rounded bg-red-100 px-2 py-1 text-xs text-red-700">Overdue</span> : null}
-                    {lead.inactive ? <span className="rounded bg-amber-100 px-2 py-1 text-xs text-amber-700">Inactive</span> : null}
-                  </td>
-                  <td className="p-2">
-                    <a className="rounded bg-green-600 px-2 py-1 text-xs text-white" href={whatsappLink(lead.phone)} target="_blank">
-                      WhatsApp
-                    </a>
-                  </td>
-                </tr>
-                <tr>
-                  <td className="px-2 pb-2" colSpan={6}>
-                    <ActivityTimeline leadId={lead._id} />
-                  </td>
-                </tr>
-              </Fragment>
-            ))}
-          </tbody>
-        </table>
-      </section>
-    </main>
-  );
-}
-
-function Card({ title, value }: { title: string; value: string }) {
-  return (
-    <article className="rounded border bg-white p-3">
-      <p className="text-sm text-slate-500">{title}</p>
-      <p className="mt-1 break-words font-mono text-xs">{value}</p>
-    </article>
+    </div>
   );
 }
