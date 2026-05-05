@@ -3,12 +3,36 @@
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+type ThemeMode = "light" | "dark";
+
+function applyTheme(mode: ThemeMode) {
+  const root = document.documentElement;
+  root.classList.toggle("dark", mode === "dark");
+  root.style.colorScheme = mode;
+  localStorage.setItem("theme", mode);
+}
 
 export function Navigation() {
   const { data: session } = useSession();
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [theme, setTheme] = useState<ThemeMode>("light");
+
+  useEffect(() => {
+    const storedTheme = localStorage.getItem("theme") as ThemeMode | null;
+    const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const initialTheme = storedTheme ?? (systemPrefersDark ? "dark" : "light");
+    setTheme(initialTheme);
+    applyTheme(initialTheme);
+  }, []);
+
+  function toggleTheme() {
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    setTheme(nextTheme);
+    applyTheme(nextTheme);
+  }
 
   if (!session) return null;
 
@@ -29,7 +53,7 @@ export function Navigation() {
   const isActive = (href: string) => pathname && (pathname === href || pathname.startsWith(href + "/"));
 
   return (
-    <nav className="sticky top-0 z-40 border-b border-slate-200 bg-white shadow-sm">
+    <nav className="sticky top-0 z-40 border-b border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
@@ -38,8 +62,8 @@ export function Navigation() {
               P
             </div>
             <div className="flex flex-col">
-              <h1 className="text-lg font-bold text-slate-900">Property CRM</h1>
-              <p className="text-xs text-slate-500 capitalize">{session.user?.role} Portal</p>
+              <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100">Property CRM</h1>
+              <p className="text-xs text-slate-500 capitalize dark:text-slate-300">{session.user?.role} Portal</p>
             </div>
           </div>
 
@@ -51,8 +75,8 @@ export function Navigation() {
                 href={item.href}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
                   isActive(item.href)
-                    ? "bg-blue-100 text-blue-700"
-                    : "text-slate-600 hover:bg-slate-100"
+                    ? "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-200"
+                      : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
                 }`}
               >
                 <span className="mr-1">{item.icon}</span>
@@ -63,13 +87,22 @@ export function Navigation() {
 
           {/* User Menu */}
           <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="rounded-lg bg-slate-100 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+              aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {theme === "dark" ? "☀️ Light" : "🌙 Dark"}
+            </button>
             <div className="hidden sm:flex flex-col items-end">
-              <p className="text-sm font-medium text-slate-900">{session.user?.name}</p>
-              <p className="text-xs text-slate-500">{session.user?.email}</p>
+              <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{session.user?.name}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-300">{session.user?.email}</p>
             </div>
             <button
               onClick={() => signOut({ callbackUrl: "/login" })}
-              className="rounded-lg bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-200"
+              className="rounded-lg bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
             >
               Logout
             </button>
@@ -77,7 +110,7 @@ export function Navigation() {
             {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden flex items-center gap-2 rounded-lg bg-slate-100 px-3 py-2 text-slate-700"
+              className="md:hidden flex items-center gap-2 rounded-lg bg-slate-100 px-3 py-2 text-slate-700 dark:bg-slate-800 dark:text-slate-200"
             >
               ≡
             </button>
@@ -86,7 +119,7 @@ export function Navigation() {
 
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-slate-200 bg-slate-50 py-3 space-y-2">
+          <div className="md:hidden border-t border-slate-200 bg-slate-50 py-3 space-y-2 dark:border-slate-700 dark:bg-slate-950">
             {navItems.map((item) => (
               <Link
                 key={item.href}
@@ -94,8 +127,8 @@ export function Navigation() {
                 onClick={() => setMobileMenuOpen(false)}
                 className={`block px-4 py-2 rounded-lg text-sm font-medium transition ${
                   isActive(item.href)
-                    ? "bg-blue-100 text-blue-700"
-                    : "text-slate-600 hover:bg-white"
+                    ? "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-200"
+                    : "text-slate-600 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-800"
                 }`}
               >
                 <span className="mr-2">{item.icon}</span>

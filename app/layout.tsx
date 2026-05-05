@@ -14,7 +14,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const session = await getServerSession(authOptions);
 
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body>
         <SessionProviderWrapper session={session}>{children}</SessionProviderWrapper>
       </body>
