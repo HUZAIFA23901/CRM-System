@@ -4,7 +4,10 @@ import { calculateLeadScore } from "@/utils/lead-score";
 
 export async function getLeadsForRole(userId: string, role: "admin" | "agent", filters?: Record<string, string>) {
   const query: FilterQuery<Lead> = {};
-  if (role === "agent") query.assignedTo = new Types.ObjectId(userId);
+  if (role === "agent") {
+    // Agents may only read leads assigned to their own account.
+    query.assignedTo = new Types.ObjectId(userId);
+  }
   if (filters?.status) query.status = filters.status;
   if (filters?.priority) query.score = filters.priority;
   if (filters?.dateFrom || filters?.dateTo) {
